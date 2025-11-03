@@ -48,6 +48,49 @@ export default defineConfig({
         });
       },
     },
+    // Custom plugin to serve assets from /var/lib/homer/
+    {
+      name: "live-assets-handler",
+      configureServer(server) {
+        server.middlewares.use((req, res, next) => {
+          if (req.url?.startsWith("/assets/")) {
+            // Remove query parameters from URL to get the actual file path
+            const urlWithoutQuery = req.url.split("?")[0];
+            const relativePath = urlWithoutQuery.replace("/assets/", "");
+            const filePath = path.join("/var/lib/homer", relativePath);
+
+            if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
+              // Determine content type based on file extension
+              const ext = path.extname(filePath).toLowerCase();
+              const contentTypes = {
+                '.svg': 'image/svg+xml',
+                '.png': 'image/png',
+                '.jpg': 'image/jpeg',
+                '.jpeg': 'image/jpeg',
+                '.gif': 'image/gif',
+                '.webp': 'image/webp',
+                '.css': 'text/css',
+                '.yml': 'text/yaml',
+                '.yaml': 'text/yaml',
+                '.json': 'application/json',
+              };
+
+              const contentType = contentTypes[ext] || 'application/octet-stream';
+              res.setHeader('Content-Type', contentType);
+
+              // Read as binary for images, text for others
+              if (ext === '.yml' || ext === '.yaml' || ext === '.css' || ext === '.json') {
+                res.end(fs.readFileSync(filePath, "utf8"));
+              } else {
+                res.end(fs.readFileSync(filePath));
+              }
+              return;
+            }
+          }
+          next();
+        });
+      },
+    },
     vue(),
     VitePWA({
       registerType: "autoUpdate",

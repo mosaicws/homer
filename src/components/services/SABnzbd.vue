@@ -18,18 +18,38 @@
     </template>
     <template #content>
       <p class="title is-4">{{ item.name }}</p>
-      <p v-if="item.subtitle" class="subtitle">
-        {{ item.subtitle }}
-      </p>
+      <template v-if="downloads > 0 && currentDownload">
+        <p class="subtitle is-6 download-name">
+          {{ currentDownload.filename }}
+        </p>
+        <p class="subtitle is-6 download-stats">
+          <span class="down monospace">
+            <i class="fas fa-download"></i>
+            {{ downRate }}
+          </span>
+          <span class="progress monospace">
+            <i class="fas fa-chart-line"></i>
+            {{ currentDownload.percentage }}%
+          </span>
+          <span v-if="currentDownload.timeleft" class="eta monospace">
+            <i class="fas fa-clock"></i>
+            {{ currentDownload.timeleft }}
+          </span>
+        </p>
+      </template>
+      <template v-else-if="item.subtitle && !error">
+        <p class="subtitle">
+          {{ item.subtitle }}
+        </p>
+      </template>
+      <template v-else-if="error">
+        <p class="subtitle is-6">
+          <span class="error">An error has occurred.</span>
+        </p>
+      </template>
       <template v-else>
         <p class="subtitle is-6">
-          <span v-if="error" class="error">An error has occurred.</span>
-          <template v-else>
-            <span class="down monospace">
-              <p class="fas fa-download"></p>
-              {{ downRate }}
-            </span>
-          </template>
+          <span class="idle">No active downloads</span>
         </p>
       </template>
     </template>
@@ -77,6 +97,18 @@ export default {
     },
     downRate() {
       return displayRate(this.dlSpeed);
+    },
+    currentDownload() {
+      if (!this.stats || !this.stats.slots || this.stats.slots.length === 0) {
+        return null;
+      }
+      // Get the first active download
+      const download = this.stats.slots[0];
+      return {
+        filename: download.filename || "Unknown",
+        percentage: download.percentage || "0",
+        timeleft: download.timeleft || download.eta || "",
+      };
     },
   },
   created() {
@@ -139,8 +171,44 @@ export default {
   color: #e51111 !important;
 }
 
+.idle {
+  color: #888;
+  font-style: italic;
+}
+
+.download-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-bottom: 0.25em;
+}
+
+.download-stats {
+  display: flex;
+  gap: 1em;
+  flex-wrap: wrap;
+
+  span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3em;
+
+    i {
+      opacity: 0.7;
+    }
+  }
+}
+
 .down {
-  margin-right: 1em;
+  margin-right: 0;
+}
+
+.progress {
+  color: #4fb5d6;
+}
+
+.eta {
+  color: #f39c12;
 }
 
 .monospace {
