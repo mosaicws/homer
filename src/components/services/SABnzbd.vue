@@ -1,5 +1,5 @@
 <template>
-  <Generic :item="item">
+  <Generic :item="displayItem">
     <template #indicator>
       <div class="notifs">
         <strong
@@ -110,6 +110,14 @@ export default {
         timeleft: download.timeleft || download.eta || "",
       };
     },
+    displayItem() {
+      // Remove tag from DOM when downloads are active
+      if (this.downloads > 0 && this.currentDownload) {
+        const { tag, tagstyle, ...itemWithoutTag } = this.item;
+        return itemWithoutTag;
+      }
+      return this.item;
+    },
   },
   created() {
     const downloadInterval = parseInt(this.item.downloadInterval, 10) || 0;
@@ -180,7 +188,8 @@ export default {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  margin-bottom: 0.25em !important;
+  margin-bottom: 0.5em !important;
+  font-weight: 600;
 }
 
 .download-stats {
@@ -220,7 +229,10 @@ export default {
 }
 
 .monospace {
-  font-weight: 300;
   font-family: monospace;
+}
+
+.download-stats .monospace {
+  font-weight: 600;
 }
 </style>
