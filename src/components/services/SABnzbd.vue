@@ -27,7 +27,7 @@
             <i class="fas fa-download"></i>
             {{ downRate }}
           </span>
-          <span class="progress monospace">
+          <span class="percentage monospace">
             <i class="fas fa-chart-line"></i>
             {{ currentDownload.percentage }}%
           </span>
@@ -180,34 +180,42 @@ export default {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  margin-bottom: 0.25em;
+  margin-bottom: 0.25em !important;
 }
 
 .download-stats {
   display: flex;
-  gap: 1em;
-  flex-wrap: wrap;
+  gap: 0.5em;
+  margin-bottom: 0 !important;
 
   span {
+    flex: 1;
     display: inline-flex;
     align-items: center;
     gap: 0.3em;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
 
     i {
       opacity: 0.7;
+      flex-shrink: 0;
     }
   }
 }
 
 .down {
+  flex: 2 !important;
   margin-right: 0;
 }
 
-.progress {
+.percentage {
+  flex: 1 !important;
   color: #4fb5d6;
 }
 
 .eta {
+  flex: 1.5 !important;
   color: #f39c12;
 }
 
