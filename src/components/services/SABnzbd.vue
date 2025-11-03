@@ -22,6 +22,13 @@
         <p class="subtitle is-6 download-name">
           {{ currentDownload.filename }}
         </p>
+        <progress
+          class="progress is-small download-progress"
+          :value="currentDownload.percentage"
+          max="100"
+        >
+          {{ currentDownload.percentage }}%
+        </progress>
         <p class="subtitle is-6 download-stats">
           <span class="down monospace">
             <i class="fas fa-download"></i>
@@ -177,19 +184,35 @@ export default {
 
 .error {
   color: #e51111 !important;
+  font-weight: normal;
+  font-size: 0.9em;
 }
 
 .idle {
   color: #888;
   font-style: italic;
+  font-weight: normal;
+  font-size: 0.9em;
 }
 
 .download-name {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
   margin-bottom: 0.5em !important;
-  font-weight: 600;
+}
+
+.download-progress {
+  margin-bottom: 0.5em !important;
+  height: 0.5rem;
+}
+
+.download-progress::-webkit-progress-value {
+  background-color: #4fb5d6;
+}
+
+.download-progress::-moz-progress-bar {
+  background-color: #4fb5d6;
 }
 
 .download-stats {
