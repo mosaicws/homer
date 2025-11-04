@@ -30,13 +30,13 @@
           {{ currentDownload.percentage }}%
         </progress>
         <p class="subtitle is-6 download-stats">
-          <span class="down monospace">
-            <i class="fas fa-download"></i>
-            {{ downRate }}
-          </span>
           <span class="percentage monospace">
-            <i class="fas fa-chart-line"></i>
+            <i class="fas fa-download"></i>
             {{ currentDownload.percentage }}%
+          </span>
+          <span class="down monospace">
+            <i class="fas fa-chart-line"></i>
+            {{ downRate }}
           </span>
           <span v-if="currentDownload.timeleft" class="eta monospace">
             <i class="fas fa-clock"></i>
@@ -76,11 +76,8 @@ const displayRate = (rate) => {
     rate /= 1000;
     i++;
   }
-  return (
-    Intl.NumberFormat(undefined, { maximumFractionDigits: 2 }).format(
-      rate || 0,
-    ) + ` ${units[i]}/s`
-  );
+  const roundedRate = Math.round(rate || 0);
+  return roundedRate.toString().padStart(3, '\u00A0') + ` ${units[i]}/s`;
 };
 
 export default {
@@ -217,15 +214,14 @@ export default {
 
 .download-stats {
   display: flex;
-  gap: 0.5em;
+  gap: 0;
   margin-bottom: 0 !important;
 
   span {
-    flex: 1;
     display: inline-flex;
     align-items: center;
+    justify-content: flex-start;
     gap: 0.3em;
-    min-width: 0;
     white-space: nowrap;
     overflow: hidden;
 
@@ -237,17 +233,17 @@ export default {
 }
 
 .down {
-  flex: 2 !important;
+  width: 7.5em;
   margin-right: 0;
 }
 
 .percentage {
-  flex: 1 !important;
+  width: 5em;
   color: #4fb5d6;
 }
 
 .eta {
-  flex: 1.5 !important;
+  width: 7em;
   color: #f39c12;
 }
 
