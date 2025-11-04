@@ -22,11 +22,7 @@
         <p class="subtitle is-6 download-name">
           {{ currentDownload.filename }}
         </p>
-        <progress
-          class="progress is-small download-progress"
-          :value="currentDownload.percentage"
-          max="100"
-        >
+        <progress class="progress is-small download-progress" :value="currentDownload.percentage" max="100">
           {{ currentDownload.percentage }}%
         </progress>
         <p class="subtitle is-6 download-stats">
@@ -36,7 +32,7 @@
           </span>
           <span class="down monospace">
             <i class="fas fa-chart-line"></i>
-            {{ downRate }}
+            <span class="speed-text"><span class="speed-padding">{{ downRate.padding }}</span>{{ downRate.value }}</span>
           </span>
           <span v-if="currentDownload.timeleft" class="eta monospace">
             <i class="fas fa-clock"></i>
@@ -68,7 +64,7 @@ import service from "@/mixins/service.js";
 
 const units = ["KB", "MB", "GB"];
 
-// Function to convert rate into a human-readable format
+// Function to convert rate into a human-readable format with separate padding
 const displayRate = (rate) => {
   let i = 0;
 
@@ -77,7 +73,13 @@ const displayRate = (rate) => {
     i++;
   }
   const roundedRate = Math.round(rate || 0);
-  return roundedRate.toString().padStart(3, '\u00A0') + ` ${units[i]}/s`;
+  const rateStr = roundedRate.toString();
+  const padding = "0".repeat(Math.max(0, 3 - rateStr.length));
+
+  return {
+    padding: padding,
+    value: `${rateStr} ${units[i]}/s`
+  };
 };
 
 export default {
@@ -134,9 +136,7 @@ export default {
   methods: {
     fetchStatus: async function () {
       try {
-        const response = await this.fetch(
-          `/api?output=json&apikey=${this.item.apikey}&mode=queue`,
-        );
+        const response = await this.fetch(`/api?output=json&apikey=${this.item.apikey}&mode=queue`);
         this.error = false;
         this.stats = response.queue;
 
@@ -202,20 +202,24 @@ export default {
 .download-progress {
   margin-bottom: 0.5em !important;
   height: 0.5rem;
+  transition: all 0.3s ease-in-out;
 }
 
 .download-progress::-webkit-progress-value {
-  background-color: #4fb5d6;
+  background-color: #20c625ff;
+  transition: all 0.3s ease-in-out;
 }
 
 .download-progress::-moz-progress-bar {
-  background-color: #4fb5d6;
+  background-color: #20c625ff;
+  transition: all 0.3s ease-in-out;
 }
 
 .download-stats {
   display: flex;
   gap: 0;
   margin-bottom: 0 !important;
+  font-size: 1.1em;
 
   span {
     display: inline-flex;
@@ -228,6 +232,7 @@ export default {
     i {
       opacity: 0.7;
       flex-shrink: 0;
+      font-size: 0.8em;
     }
   }
 }
@@ -235,11 +240,12 @@ export default {
 .down {
   width: 7.5em;
   margin-right: 0;
+  color: #4fb5d6;
 }
 
 .percentage {
-  width: 5em;
-  color: #4fb5d6;
+  width: 4.8em;
+  color: #4caf50;
 }
 
 .eta {
@@ -253,5 +259,18 @@ export default {
 
 .download-stats .monospace {
   font-weight: 600;
+}
+
+.speed-text {
+  display: inline-flex;
+  gap: 0 !important;
+  margin: 0;
+  padding: 0;
+}
+
+.speed-padding {
+  opacity: 0.25;
+  margin: 0;
+  padding: 0;
 }
 </style>
