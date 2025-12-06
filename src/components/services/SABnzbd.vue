@@ -354,7 +354,7 @@ export default {
 }
 
 .control-icon {
-  margin-left: 0.4em;
+  margin-left: 0.6em;
   font-size: 0.6em;
   cursor: pointer;
   opacity: 0.7;

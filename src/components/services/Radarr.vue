@@ -23,7 +23,28 @@
       </div>
     </template>
     <template #content>
-      <p class="title is-4">{{ item.name }}</p>
+      <p class="title is-4">
+        {{ item.name }}
+        <i
+          v-if="activity > 0"
+          @click.stop.prevent="confirmDelete"
+          @touchstart.stop.prevent="confirmDelete"
+          class="control-icon fas fa-trash"
+          title="Delete current queue item"
+        ></i>
+      </p>
+      <teleport to="body">
+        <div v-if="showDeleteConfirm" :class="['confirm-overlay', themeClass]" @click.stop="cancelDelete">
+          <div class="confirm-dialog" @click.stop>
+            <p class="confirm-title">Delete Queue Item?</p>
+            <p class="confirm-message">Are you sure you want to delete "{{ currentQueue?.movieTitle }}" from the queue?</p>
+            <div class="confirm-actions">
+              <button @click.stop="deleteQueueItem" class="confirm-btn confirm-delete">Delete</button>
+              <button @click.stop="cancelDelete" class="confirm-btn confirm-cancel">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </teleport>
       <template v-if="activity > 0 && currentQueue">
         <p class="subtitle is-6 queue-movie">
           {{ currentQueue.movieTitle }}
@@ -77,11 +98,22 @@ export default {
       errors: null,
       serverError: false,
       queueData: null,
+      showDeleteConfirm: false,
     };
   },
   computed: {
     apiPath() {
       return this.item.legacyApi ? LEGACY_API : V3_API;
+    },
+    themeClass() {
+      // Detect current theme from document
+      if (typeof document !== 'undefined') {
+        const isDark = document.body.classList.contains('dark') ||
+                      document.documentElement.classList.contains('dark') ||
+                      window.matchMedia('(prefers-color-scheme: dark)').matches;
+        return isDark ? 'dark' : 'light';
+      }
+      return 'light';
     },
     currentQueue() {
       if (!this.queueData || !this.queueData.records || this.queueData.records.length === 0) {
@@ -103,7 +135,8 @@ export default {
       // Format status message
       let statusMessage = "";
       if (status.toLowerCase().includes('download')) {
-        statusMessage = `Downloading via ${downloadClient}`;
+        // Map qBittorrent to VueTorrent for display
+        statusMessage = downloadClient === "qBittorrent" ? "VueTorrent" : downloadClient;
       } else if (status.toLowerCase().includes('import')) {
         statusMessage = "Importing...";
       } else {
@@ -116,6 +149,7 @@ export default {
         quality: quality,
         size: this.formatSize(size),
         timeleft: queue.timeleft || queue.estimatedCompletionTime ? this.formatTime(queue.timeleft || queue.estimatedCompletionTime) : null,
+        id: queue.id,
       };
     },
     displayItem() {
@@ -242,6 +276,39 @@ export default {
         return timeString;
       }
     },
+    confirmDelete: function () {
+      this.showDeleteConfirm = true;
+    },
+    cancelDelete: function () {
+      this.showDeleteConfirm = false;
+    },
+    deleteQueueItem: async function () {
+      try {
+        if (!this.currentQueue?.id) {
+          console.error('No queue item ID available for deletion');
+          return;
+        }
+        // Radarr API: DELETE /api/v3/queue/{id}
+        try {
+          await this.fetch(`${this.apiPath}/queue/${this.currentQueue.id}?apikey=${this.item.apikey}`, {
+            method: 'DELETE',
+          });
+        } catch (e) {
+          // DELETE returns empty response, which is normal - ignore JSON parse errors
+          if (e.message && e.message.includes('JSON')) {
+            // Deletion successful, empty response is expected
+          } else {
+            throw e; // Re-throw if it's a different error
+          }
+        }
+        this.showDeleteConfirm = false;
+        // Fetch the latest status to confirm deletion
+        await this.fetchConfig();
+      } catch (e) {
+        console.error('Failed to delete queue item:', e);
+        this.showDeleteConfirm = false;
+      }
+    },
   },
 };
 </script>
@@ -314,5 +381,112 @@ export default {
   margin-bottom: 0.25em !important;
   font-size: 0.85em;
   font-weight: 500;
+}
+
+.control-icon {
+  margin-left: 0.4em;
+  font-size: 0.6em;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.2s ease, transform 0.1s ease, border-color 0.2s ease;
+  vertical-align: middle;
+  position: relative;
+  top: -0.1em;
+  z-index: 9999;
+  pointer-events: all;
+  border: 1.5px solid;
+  border-radius: 0.3em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.8em;
+  height: 1.8em;
+
+  &:hover {
+    opacity: 1;
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+
+  &.fa-trash {
+    color: #e51111;
+    border-color: rgba(229, 17, 17, 0.4);
+
+    &:hover {
+      border-color: rgba(229, 17, 17, 0.7);
+    }
+  }
+}
+</style>
+
+<style>
+/* Non-scoped styles for teleported dialog */
+.confirm-overlay {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  background-color: rgba(0, 0, 0, 0.7) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  z-index: 10000 !important;
+}
+
+.confirm-dialog {
+  background-color: var(--card-background) !important;
+  border-radius: 0.5em !important;
+  padding: 1.5em !important;
+  max-width: 400px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
+}
+
+.confirm-title {
+  font-size: 1.2em !important;
+  font-weight: 600 !important;
+  margin-bottom: 0.5em !important;
+  color: var(--text-title) !important;
+}
+
+.confirm-message {
+  margin-bottom: 1.5em !important;
+  color: var(--text) !important;
+  word-break: break-word !important;
+}
+
+.confirm-actions {
+  display: flex !important;
+  gap: 0.5em !important;
+  justify-content: flex-end !important;
+}
+
+.confirm-btn {
+  padding: 0.5em 1em !important;
+  border: none !important;
+  border-radius: 0.3em !important;
+  cursor: pointer !important;
+  font-weight: 600 !important;
+  transition: opacity 0.2s ease, transform 0.1s ease !important;
+}
+
+.confirm-btn:hover {
+  opacity: 0.9 !important;
+}
+
+.confirm-btn:active {
+  transform: scale(0.95) !important;
+}
+
+.confirm-delete {
+  background-color: #e51111 !important;
+  color: white !important;
+}
+
+.confirm-cancel {
+  background-color: #888 !important;
+  color: white !important;
 }
 </style>
