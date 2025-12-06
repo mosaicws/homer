@@ -338,7 +338,8 @@ export default {
   &.fa-pause {
     color: #f39c12;
     border-color: rgba(243, 156, 18, 0.4);
-    transform: translate(-0.5px, 0.5px);
+    padding-top: 1px;
+    padding-left: 0;
 
     &:hover {
       border-color: rgba(243, 156, 18, 0.7);
