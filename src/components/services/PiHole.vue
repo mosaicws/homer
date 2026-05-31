@@ -70,7 +70,7 @@ export default {
       this.autoUpdateMethod = this.fetchStatus;
     } else {
       // Set up auto-update method for the scheduler
-      this.autoUpdateMethod = this.fetchStatus_v5();
+      this.autoUpdateMethod = this.fetchStatus_v5;
     }
     // Initial data fetch
     this.autoUpdateMethod();
