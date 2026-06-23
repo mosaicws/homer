@@ -40,7 +40,9 @@ class UpdateScheduler {
       component,
       interval: intervalSeconds,
       method: updateMethod,
-      lastUpdate: 0,
+      // Baseline against the live tick counter (monotonic across pause/resume),
+      // so the first scheduled update lands a full interval after registration.
+      lastUpdate: this.tickCount,
     });
 
     this.startGlobalTimer();
@@ -69,8 +71,12 @@ class UpdateScheduler {
 
   startGlobalTimer() {
     if (!this.globalTimer) {
-      this.tickCount = 0;
-
+      // NOTE: tickCount is intentionally NOT reset here. It must stay monotonic
+      // across stop/start (e.g. tab hide/show) so registered components'
+      // `lastUpdate` baselines remain valid. Resetting it stranded components
+      // with a large `lastUpdate` against a counter restarting from 0, freezing
+      // cards for as long as the tab had previously been open. (Local divergence
+      // from upstream — see UPGRADE_NOTES.md.)
       this.globalTimer = setInterval(() => {
         this.tickCount++;
         this.processUpdates();
@@ -84,7 +90,7 @@ class UpdateScheduler {
     if (this.globalTimer) {
       clearInterval(this.globalTimer);
       this.globalTimer = null;
-      this.tickCount = 0;
+      // tickCount is preserved (see startGlobalTimer) so it stays monotonic.
       console.log("UpdateScheduler: Global timer stopped");
     }
   }
@@ -96,6 +102,20 @@ class UpdateScheduler {
           config.method.call(config.component);
           config.lastUpdate = this.tickCount;
         }
+      } catch (error) {
+        console.error("UpdateScheduler: Error during component update:", error);
+      }
+    }
+  }
+
+  // Run every registered component's update method now and re-baseline it.
+  // Used when the tab becomes visible again so cards refresh immediately
+  // instead of waiting up to a full interval for the next scheduled tick.
+  triggerImmediateUpdate() {
+    for (const [, config] of this.registeredComponents) {
+      try {
+        config.method.call(config.component);
+        config.lastUpdate = this.tickCount;
       } catch (error) {
         console.error("UpdateScheduler: Error during component update:", error);
       }
@@ -113,6 +133,9 @@ if (typeof document !== "undefined") {
       updateScheduler.stopGlobalTimer();
     } else if (updateScheduler.registeredComponents.size > 0) {
       updateScheduler.startGlobalTimer();
+      // Refresh immediately on return so cards aren't stale while we wait for
+      // the next scheduled tick.
+      updateScheduler.triggerImmediateUpdate();
     }
   });
 }
