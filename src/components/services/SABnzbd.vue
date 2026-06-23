@@ -90,6 +90,7 @@
 
 <script>
 import service from "@/mixins/service.js";
+import { keepStable } from "@/utils/keepStable.js";
 
 const units = ["KB", "MB", "GB"];
 
@@ -148,24 +149,24 @@ export default {
       }
       return 'light';
     },
-    currentDownload() {
+    currentDownload(prev) {
       if (!this.stats || !this.stats.slots || this.stats.slots.length === 0) {
         return null;
       }
       // Get the first active download
       const download = this.stats.slots[0];
-      return {
+      return keepStable(prev, {
         filename: download.filename || "Unknown",
         percentage: download.percentage || "0",
         timeleft: download.timeleft || download.eta || "",
         nzo_id: download.nzo_id || "",
-      };
+      });
     },
-    displayItem() {
+    displayItem(prev) {
       // Remove tag from DOM when downloads are active
       if (this.downloads > 0 && this.currentDownload) {
         const { tag, tagstyle, ...itemWithoutTag } = this.item;
-        return itemWithoutTag;
+        return keepStable(prev, itemWithoutTag);
       }
       return this.item;
     },

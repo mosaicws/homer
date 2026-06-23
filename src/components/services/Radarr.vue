@@ -80,6 +80,7 @@
 
 <script>
 import service from "@/mixins/service.js";
+import { keepStable } from "@/utils/keepStable.js";
 
 const V3_API = "/api/v3";
 const LEGACY_API = "/api";
@@ -115,7 +116,7 @@ export default {
       }
       return 'light';
     },
-    currentQueue() {
+    currentQueue(prev) {
       if (!this.queueData || !this.queueData.records || this.queueData.records.length === 0) {
         return null;
       }
@@ -143,20 +144,20 @@ export default {
         statusMessage = status;
       }
 
-      return {
+      return keepStable(prev, {
         movieTitle: movieTitle,
         status: statusMessage,
         quality: quality,
         size: this.formatSize(size),
         timeleft: queue.timeleft || queue.estimatedCompletionTime ? this.formatTime(queue.timeleft || queue.estimatedCompletionTime) : null,
         id: queue.id,
-      };
+      });
     },
-    displayItem() {
+    displayItem(prev) {
       // Remove tag from DOM when queue is active
       if (this.activity > 0 && this.currentQueue) {
         const { tag, tagstyle, ...itemWithoutTag } = this.item;
-        return itemWithoutTag;
+        return keepStable(prev, itemWithoutTag);
       }
       return this.item;
     },

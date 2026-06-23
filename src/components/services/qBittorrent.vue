@@ -90,6 +90,7 @@
 
 <script>
 import service from "@/mixins/service.js";
+import { keepStable } from "@/utils/keepStable.js";
 const units = ["KB", "MB", "GB"];
 
 // Function to convert rate into a human-readable format with separate padding
@@ -143,7 +144,7 @@ export default {
       }
       return 'light';
     },
-    currentTorrent: function () {
+    currentTorrent: function (prev) {
       if (!this.torrents || this.torrents.length === 0) {
         return null;
       }
@@ -162,19 +163,19 @@ export default {
         }
       }
 
-      return {
+      return keepStable(prev, {
         name: torrent.name || "Unknown",
         progress: Math.round(torrent.progress * 100),
         eta: eta,
         state: torrent.state,
         hash: torrent.hash,
-      };
+      });
     },
-    displayItem() {
+    displayItem(prev) {
       // Remove tag from DOM when torrents are active
       if (this.count > 0 && this.currentTorrent) {
         const { tag, tagstyle, ...itemWithoutTag } = this.item;
-        return itemWithoutTag;
+        return keepStable(prev, itemWithoutTag);
       }
       return this.item;
     },
