@@ -10,6 +10,7 @@
           :class="status === 'enabled' ? 'fa-pause' : 'fa-play'"
           :title="status === 'enabled' ? 'Disable blocking for 5 minutes' : 'Enable blocking'"
         ></i>
+        <RestartButton :item-name="item.name" />
       </p>
       <p class="subtitle is-6">
         <template v-if="item.subtitle">

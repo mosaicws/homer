@@ -18,7 +18,10 @@
             </slot>
             <div class="media-content">
               <slot name="content">
-                <p class="title">{{ item.name }}</p>
+                <p class="title">
+                  {{ item.name }}
+                  <RestartButton :item-name="item.name" />
+                </p>
                 <p v-if="item.quick" class="quicklinks">
                   <a
                     v-for="(link, linkIndex) in item.quick"

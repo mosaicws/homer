@@ -4,9 +4,11 @@ import App from "./App.vue";
 
 const app = createApp(App);
 import Generic from "./components/services/Generic.vue";
+import RestartButton from "./components/RestartButton.vue";
 
 app
   .component("Generic", Generic)
+  .component("RestartButton", RestartButton)
   .component("DynamicStyle", (_props, context) => {
     return h("style", {}, context.slots);
   });

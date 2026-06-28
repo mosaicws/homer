@@ -10,6 +10,25 @@
     ]"
   >
     <DynamicTheme v-if="config.colors" :themes="config.colors" />
+
+    <!-- Floating toggle for the per-card restart controls. Lives outside the
+         navbar because custom.css hides the navbar entirely. Off by default;
+         state persists in localStorage. Only shown when at least one service
+         is restartable (server-side mapping present). -->
+    <button
+      v-if="restartableServices.length"
+      class="restart-toggle"
+      :class="{ active: showRestartControls }"
+      :title="
+        showRestartControls
+          ? 'Hide restart buttons'
+          : 'Show restart buttons'
+      "
+      @click="toggleRestartControls"
+    >
+      <i class="fas fa-power-off"></i>
+    </button>
+
     <div id="bighead">
       <section v-if="config.header" class="first-line">
         <div v-cloak class="container">
@@ -133,6 +152,13 @@ export default {
   provide() {
     return {
       config: () => this.config,
+      // Exposed to Generic.vue so each card can decide whether to show its
+      // restart button: only when the toggle is on AND the service is in the
+      // server-side whitelist.
+      restartControls: () => ({
+        enabled: this.showRestartControls,
+        services: this.restartableServices,
+      }),
     };
   },
   data: function () {
@@ -147,6 +173,8 @@ export default {
       vlayout: true,
       isDark: null,
       showMenu: false,
+      showRestartControls: localStorage.getItem("restartControls") === "true",
+      restartableServices: [],
     };
   },
   computed: {
@@ -156,6 +184,7 @@ export default {
   },
   created: async function () {
     this.buildDashboard();
+    this.loadRestartableServices();
     window.onhashchange = this.buildDashboard;
     this.loaded = true;
     console.info(`Homer v${__APP_VERSION__}`);
@@ -167,6 +196,23 @@ export default {
     searchHotkey() {
       if (this.config.hotkey && this.config.hotkey.search) {
         return this.config.hotkey.search;
+      }
+    },
+    toggleRestartControls: function () {
+      this.showRestartControls = !this.showRestartControls;
+      localStorage.setItem("restartControls", this.showRestartControls);
+    },
+    loadRestartableServices: async function () {
+      // Ask the server-side middleware which services have a Proxmox mapping.
+      // Names only — no tokens or vmids reach the browser. Fails silently
+      // (empty list = no buttons) if the endpoint isn't available.
+      try {
+        const response = await fetch("api/proxmox/services");
+        if (!response.ok) return;
+        const data = await response.json();
+        this.restartableServices = data.services || [];
+      } catch (e) {
+        console.warn("Restart controls unavailable:", e);
       }
     },
     buildDashboard: async function () {
@@ -291,3 +337,43 @@ export default {
   },
 };
 </script>
+
+<style scoped lang="scss">
+.restart-toggle {
+  position: fixed;
+  top: 1.1rem;
+  right: 1.1rem;
+  z-index: 9000;
+  width: 2.7rem;
+  height: 2.7rem;
+  border-radius: 50%;
+  border: 1.5px solid rgba(127, 127, 127, 0.45);
+  background-color: var(--card-background);
+  color: var(--text-title);
+  cursor: pointer;
+  opacity: 0.55;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  transition: opacity 0.2s ease, color 0.2s ease, border-color 0.2s ease,
+    box-shadow 0.2s ease, transform 0.1s ease;
+
+  &:hover {
+    opacity: 1;
+    border-color: rgba(127, 127, 127, 0.8);
+  }
+
+  &:active {
+    transform: scale(0.93);
+  }
+
+  &.active {
+    opacity: 1;
+    color: #e67e22;
+    border-color: #e67e22;
+    box-shadow: 0 0 8px rgba(230, 126, 34, 0.5);
+  }
+}
+</style>

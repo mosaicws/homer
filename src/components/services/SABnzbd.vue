@@ -34,6 +34,7 @@
           class="control-icon fas fa-trash"
           title="Delete current download"
         ></i>
+        <RestartButton :item-name="item.name" />
       </p>
       <teleport to="body">
         <div v-if="showDeleteConfirm" :class="['confirm-overlay', themeClass]" @click.stop="cancelDelete">
@@ -422,7 +423,7 @@ export default {
 }
 
 .confirm-dialog {
-  background-color: var(--card-background) !important;
+  background-color: #ffffff !important;
   border-radius: 0.5em !important;
   padding: 1.5em !important;
   max-width: 400px !important;
@@ -433,12 +434,12 @@ export default {
   font-size: 1.2em !important;
   font-weight: 600 !important;
   margin-bottom: 0.5em !important;
-  color: var(--text-title) !important;
+  color: #1a1a1a !important;
 }
 
 .confirm-message {
   margin-bottom: 1.5em !important;
-  color: var(--text) !important;
+  color: #333333 !important;
   word-break: break-word !important;
 }
 
